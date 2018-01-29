@@ -61,7 +61,7 @@ func GetColumnsFromMysqlTable(mariadbUser string, mariadbPassword string, mariad
 }
 
 // Generate go struct entries for a map[string]interface{} structure
-func generateMysqlTypes(obj map[string]map[string]string, depth int, jsonAnnotation bool, gormAnnotation bool, gureguTypes bool) string {
+func generateMysqlTypes(obj map[string]map[string]string, depth int, dbAnnotation, jsonAnnotation, gormAnnotation, gureguTypes bool) string {
 	structure := "struct {"
 
 	keys := make([]string, 0, len(obj))
@@ -85,10 +85,13 @@ func generateMysqlTypes(obj map[string]map[string]string, depth int, jsonAnnotat
 
 		fieldName := fmtFieldName(stringifyFirstChar(key))
 		var annotations []string
-		if gormAnnotation == true {
+		if dbAnnotation {
+			annotations = append(annotations, fmt.Sprintf("db:\"%s\"", key))
+		}
+		if gormAnnotation {
 			annotations = append(annotations, fmt.Sprintf("gorm:\"column:%s\"", key))
 		}
-		if jsonAnnotation == true {
+		if jsonAnnotation {
 			annotations = append(annotations, fmt.Sprintf("json:\"%s\"", key))
 		}
 		if len(annotations) > 0 {
@@ -156,6 +159,11 @@ func mysqlTypeToGoType(mysqlType string, nullable bool, gureguTypes bool) string
 		return golangFloat32
 	case "binary", "blob", "longblob", "mediumblob", "varbinary":
 		return golangByteArray
+	case "bit", "bool":
+		if nullable {
+			return sqlNullBool
+		}
+		return golangBool
 	}
 	return ""
 }
