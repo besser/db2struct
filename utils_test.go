@@ -270,6 +270,29 @@ type testStruct struct {
 	})
 }
 
+func TestMysqlDBStringGenerate(t *testing.T) {
+	columnMap := map[string]map[string]string{
+		"stringColumn":     {"nullable": "NO", "value": "varchar"},
+		"nullStringColumn": {"nullable": "YES", "value": "varchar"},
+	}
+
+	expectedStruct :=
+		`package test
+
+type testStruct struct {
+	NullStringColumn sql.NullString ` + "`db:\"nullStringColumn\"`" + `
+	StringColumn     string         ` + "`db:\"stringColumn\"`" + `
+}
+`
+
+	bytes, err := Generate(columnMap, "test_table", "testStruct", "test", true, false, false)
+
+	Convey("Should be able to generate map from string column", t, func() {
+		So(err, ShouldBeNil)
+		So(string(bytes), ShouldEqual, expectedStruct)
+	})
+}
+
 func TestMysqlJSONStringGenerate(t *testing.T) {
 	columnMap := map[string]map[string]string{
 		"stringColumn":     {"nullable": "NO", "value": "varchar"},
